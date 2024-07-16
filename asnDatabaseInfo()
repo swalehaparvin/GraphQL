@@ -1,0 +1,61 @@
+GraphQL query example for fetching ASN database information used by LogScale.
+
+This script demonstrates how to construct a GraphQL query to retrieve the IP ASN database
+information and how to parse the response.
+
+Dependencies:
+- requests
+"""
+
+import requests
+
+def get_asn_database_info(api_url, headers):
+    """
+    Fetches the ASN database information from the LogScale instance.
+
+    Args:
+        api_url (str): The endpoint URL for the GraphQL API.
+        headers (dict): The headers to include in the request, typically including the
+                        Authorization token.
+
+    Returns:
+        dict: A dictionary containing the ASN database information.
+    """
+    query = """
+    {
+      asnDatabaseInfo {
+        dbFilePath
+        updateStrategy
+        metadata
+      }
+    }
+    """
+
+    try:
+        response = requests.post(api_url, json={'query': query}, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get('data', {}).get('asnDatabaseInfo', {})
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
+
+def main():
+    """
+    Main function to fetch and print ASN database information.
+    """
+    api_url = 'https://your-logscale-instance/api/graphql'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_ACCESS_TOKEN'
+    }
+
+    asn_database_info = get_asn_database_info(api_url, headers)
+    
+    print("ASN Database Information:")
+    print(f"Database File Path: {asn_database_info.get('dbFilePath')}")
+    print(f"Update Strategy: {asn_database_info.get('updateStrategy')}")
+    print(f"Metadata: {asn_database_info.get('metadata')}")
+
+if __name__ == '__main__':
+    main()
+```
