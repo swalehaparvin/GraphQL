@@ -1,29 +1,81 @@
-<!doctype html>
-<html>
-  <head>
-    <title>This script demonstrates how to construct a GraphQL query to retrieve the list of blocked query patterns
-and how to parse the response.</title>
-  </head>
-  <body>
-    <p>This query requests the list of blocked query patterns:
-{
-  blockedQueries {
-    id
-    expiresAt
-    expiresInMilliseconds
-    pattern
-    type
-    view {
-      id
-      name
-    }
-    organization {
-      id
-      name
-    }
-  }
-}
+GraphQL query example for fetching blocked query patterns used by LogScale.
 
-</p>
-  </body>
-</html>
+##This script demonstrates how to construct a GraphQL query to retrieve the list of blocked query patterns
+and how to parse the response.
+
+Dependencies:
+- requests
+"""
+
+import requests
+
+def get_blocked_queries(api_url, headers):
+    """
+    Fetches the list of blocked query patterns from the LogScale instance.
+
+    Args:
+        api_url (str): The endpoint URL for the GraphQL API.
+        headers (dict): The headers to include in the request, typically including the
+                        Authorization token.
+
+    Returns:
+        list: A list of dictionaries containing the blocked query patterns.
+    """
+    query = """
+    {
+      blockedQueries {
+        id
+        expiresAt
+        expiresInMilliseconds
+        pattern
+        type
+        view {
+          id
+          name
+        }
+        organization {
+          id
+          name
+        }
+      }
+    }
+    """
+
+    try:
+        response = requests.post(api_url, json={'query': query}, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get('data', {}).get('blockedQueries', [])
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
+
+def main():
+    """
+    Main function to fetch and print blocked query patterns.
+    """
+    api_url = 'https://your-logscale-instance/api/graphql'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_ACCESS_TOKEN'
+    }
+
+    blocked_queries = get_blocked_queries(api_url, headers)
+    
+    print("Blocked Query Patterns:")
+    for query in blocked_queries:
+        print(f"ID: {query.get('id')}")
+        print(f"Expires At: {query.get('expiresAt')}")
+        print(f"Expires In Milliseconds: {query.get('expiresInMilliseconds')}")
+        print(f"Pattern: {query.get('pattern')}")
+        print(f"Type: {query.get('type')}")
+        view = query.get('view')
+        if view:
+            print(f"View ID: {view.get('id')}, View Name: {view.get('name')}")
+        organization = query.get('organization')
+        if organization:
+            print(f"Organization ID: {organization.get('id')}, Organization Name: {organization.get('name')}")
+        print()
+
+if __name__ == '__main__':
+    main()
+
